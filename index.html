@@ -41,7 +41,7 @@ input,select,textarea{width:100%;padding:.5rem .7rem;border:1px solid var(--bd);
 :root[data-theme=dark] .toast{color:#10200f}
 .notice{border-left:4px solid var(--lime);background:var(--card);padding:.6rem .9rem;border-radius:8px;margin:1rem 0;font-size:.9rem}
 ol li,ul li{margin:.25rem 0}
-.steps{counter-reset:s}.steps .card{position:relative}
+#aistat:empty{display:none}.steps{counter-reset:s}.steps .card{position:relative}
 </style></head><body>
 <nav aria-label="Main"><b>🌿 OutThere</b>
 <button class="nb" data-v="home">Home</button><button class="nb" data-v="explore">Explore</button><button class="nb" data-v="host">Host</button><button class="nb" data-v="lab">AI Idea Lab</button><button class="nb" data-v="mine">My Activities</button><button class="nb" data-v="profile">Profile</button><button class="nb" id="authBtn"></button></nav>
@@ -108,10 +108,10 @@ host(){if(!me)return needAuth('host an activity');return`<h2>Host an activity</h
 <label for="ds">Description *</label><textarea id="ds" rows="3"></textarea><label for="ac">Accessibility information</label><input id="ac"><label for="ru">Community rules / notes</label><input id="ru">
 <p class="mut">Venue neighborhood is taken from the venue. Venues are unverified demo records — check before real use.</p><div id="he" class="err"></div><button class="btn">Publish activity</button></form>`},
 lab(){const o=(id,l,arr,v)=>`<div><label for="${id}">${l}</label><select id="${id}">${arr.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select></div>`;const c=AI.cfg;
-return`<h2>AI Idea Lab</h2><div class="notice">Plans come from <b>Gemma</b>, Google's open-weight model. By default it runs <b>entirely in your browser</b> with WebLLM: after a one-time model download (about 1.5&nbsp;GB, cached), nothing you type leaves this device. You can also point it at your own Ollama or any OpenAI-compatible server. If no model is available, you get a clearly labelled template instead.</div>
+return`<h2>AI Idea Lab</h2><div class="notice">Plans come from <b>Gemma</b>, Google's open-weight model. If your browser supports WebGPU, Gemma runs <b>entirely on your device</b>: after a one-time download (about 1.5&nbsp;GB, cached), nothing you type leaves it. Otherwise your form answers are sent to <b>Gemma 4 on Google AI Studio</b>, which may log them, so don't include personal details. You can also use your own Ollama server under Model settings. Every plan says which model made it.</div>
 <form id="lf" class="card"><div class="fg">${o('lc','Category',CATS)}${o('la','Area',HOODS,(me?.hoods||[])[0])}<div><label for="ln">Participants</label><input id="ln" type="number" value="6" min="2" max="30"></div><div><label for="ld">Time available (min)</label><input id="ld" type="number" value="60" min="15" max="240"></div>${o('lb','Budget per person',['Free','Under 50 EGP','Under 150 EGP'])}${o('lg','Group familiarity',['strangers','acquaintances','friends'])}${o('lo','Objective',['break the ice','practice a language','collaborate','explore nature','have fun'])}${o('ll','Instruction language',['English','Arabic'])}${o('lf2','Difficulty',['easy','medium'])}<div><label for="li">Interests</label><input id="li" value="${esc(me?.interests||'')}" placeholder="e.g. photography, chess"></div><div><label for="lm">Available materials</label><input id="lm" placeholder="e.g. paper, pens"></div></div>
-<details style="margin-top:.8rem"><summary>Model settings</summary><div class="fg">${o('ae','Engine',['On-device Gemma (WebLLM)','Ollama / OpenAI-compatible endpoint'],c.engine)}<div><label for="au">Endpoint base URL</label><input id="au" value="${esc(c.url)}" placeholder="http://localhost:11434/v1"></div><div><label for="am">Endpoint model</label><input id="am" value="${esc(c.model)}" placeholder="gemma3:4b"></div></div><p class="mut">For Ollama, start it with <code>OLLAMA_ORIGINS=*</code> so the browser may call it. WebLLM needs a browser with WebGPU (recent Chrome or Edge).</p></details>
-<div class="row" style="margin-top:.9rem"><button class="btn" value="live">Generate with Gemma</button><button class="btn sec" value="tpl">Use template instead</button></div></form><div id="aistat" class="mut" role="status" aria-live="polite"></div><div id="plan"></div>`},
+<details style="margin-top:.8rem"><summary>Model settings</summary><div class="fg">${o('ae','Engine',['Auto (on-device, else hosted)','On-device Gemma (WebLLM)','Hosted Gemma (Google AI Studio)','Ollama / OpenAI-compatible endpoint'],c.engine)}<div><label for="au">Endpoint base URL</label><input id="au" value="${esc(c.url)}" placeholder="http://localhost:11434/v1"></div><div><label for="am">Endpoint model</label><input id="am" value="${esc(c.model)}" placeholder="gemma3:4b"></div></div><p class="mut">For Ollama, start it with <code>OLLAMA_ORIGINS=*</code> so the browser may call it. WebLLM needs a browser with WebGPU (recent Chrome or Edge).</p></details>
+<div class="row" style="margin-top:.9rem"><button class="btn" value="live">Generate with Gemma</button><button class="btn sec" value="tpl">Use template instead</button></div></form><div id="aistat" class="notice" role="status" aria-live="polite" style="font-weight:600"></div><div id="plan"></div>`},
 mine(){if(!me)return needAuth('see your activities');const j=acts.filter(a=>a.people.includes(me.id)),h=acts.filter(a=>a.host===me.id);return`<h2>My activities</h2><h3>Joined</h3><div class="grid">${j.map(cardHtml).join('')||'<p class="mut">Nothing yet. <button class="btn sm" data-go="explore">Explore</button></p>'}</div><h3 style="margin-top:1.5rem">Hosting</h3><div class="grid">${h.map(cardHtml).join('')||'<p class="mut">You are not hosting anything. <button class="btn sm" data-go="host">Host one</button></p>'}</div>`},
 profile(){if(!me)return needAuth('edit your profile');const u=me;return`<h2>Profile</h2><form id="pf" class="card"><div class="fg"><div><label for="pn">Display name</label><input id="pn" value="${esc(u.name)}"></div><div><label for="pi">Interests (comma separated)</label><input id="pi" value="${esc(u.interests||'')}"></div><div><label for="ps">Preferred group size (max)</label><input id="ps" type="number" min="2" value="${esc(u.size||'')}"></div><div><label for="pl">Languages spoken / learning</label><input id="pl" value="${esc(u.langs||'')}"></div></div>
 <label>Preferred categories</label><div class="row">${CATS.map(c=>`<label style="font-weight:400"><input type="checkbox" style="width:auto" name="pc" value="${c}" ${(u.cats||[]).includes(c)?'checked':''}> ${c}</label>`).join('')}</div>
@@ -162,16 +162,24 @@ function validPlan(r){if(!r||typeof r!=='object')return null;const st=k=>typeof 
  if(!['title','desc','objective','closing'].every(st)||!sa(r.steps,3)||!sa(r.prompts,1)||!sa(r.variations,1)||!sa(r.access,1))return null;
  return{title:r.title,desc:r.desc,objective:r.objective,duration:String(r.duration||'').slice(0,40)||'n/a',size:String(r.size||'').slice(0,40)||'n/a',materials:String(r.materials||'None').slice(0,200),steps:r.steps,prompts:r.prompts,variations:r.variations,access:r.access,safety:[...(sa(r.safety,1)?r.safety:[]),...SAFE],closing:r.closing,why:typeof r.why==='string'?r.why.slice(0,300):'',lang:''}}
 // ---- Open-weight AI: Gemma on-device (WebLLM) or any OpenAI-compatible endpoint (Ollama, vLLM, HF) ----
+// Hosted fallback: your Supabase Edge Function URL (see supabase/functions/gemma-plan). Leave '' to disable.
+const HOSTED_URL='https://txsybrxqgfaeetmhrlav.supabase.co/functions/v1/hyper-function';
 const WEBLLM='https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm';
-const AI={engine:null,modelId:null,cfg:load('ot_ai',{engine:'On-device Gemma (WebLLM)',url:'',model:''}),
- save(){const v=i=>$('#'+i)?.value.trim();if($('#ae'))this.cfg={engine:v('ae'),url:v('au'),model:v('am')};save('ot_ai',this.cfg)},
+const AI={engine:null,modelId:null,cfg:load('ot_ai2',{engine:'Auto (on-device, else hosted)',url:'',model:''}),
+ save(){const v=i=>$('#'+i)?.value.trim();if($('#ae'))this.cfg={engine:v('ae'),url:v('au'),model:v('am')};save('ot_ai2',this.cfg)},
  async local(prompt,status){if(!navigator.gpu)throw{code:'WebGPU not available in this browser'};
   if(!this.engine){status('Loading Gemma into your browser…');const ad=await navigator.gpu.requestAdapter();const f16=ad&&ad.features.has('shader-f16');
    this.modelId=f16?'gemma-2-2b-it-q4f16_1-MLC':'gemma-2-2b-it-q4f32_1-MLC';const webllm=await import(WEBLLM);
-   this.engine=await webllm.CreateMLCEngine(this.modelId,{initProgressCallback:r=>status(r.text)})}
+   this.engine=await webllm.CreateMLCEngine(this.modelId,{initProgressCallback:r=>{const pc=Math.round((r.progress||0)*100);status(/cache|fetch/i.test(r.text)?`Downloading Gemma to your browser (one time, about 1.5 GB): ${pc}%. Next time it starts in seconds.`:pc>=100||/load|shader|init/i.test(r.text)?'Preparing Gemma on your GPU…':'Getting Gemma ready…')}})}
   status('Gemma is writing your plan on this device…');
   const r=await this.engine.chat.completions.create({messages:[{role:'user',content:prompt}],temperature:.7,max_tokens:900,response_format:{type:'json_object'}});
   return{text:r.choices[0].message.content,label:this.modelId+' running on your device (WebLLM)'}},
+ async hosted(p,status){if(!HOSTED_URL)throw{code:'hosted Gemma is not configured on this site'};status('Sending your request to Gemma 4 on Google AI Studio…');
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),60000);
+  try{const r=await fetch(HOSTED_URL,{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json'},body:JSON.stringify(p)});const d=await r.json().catch(()=>({}));
+   if(!r.ok)throw{code:d.error||('server returned '+r.status)};return{text:d.text,label:(d.model||'Gemma')+' via Google AI Studio (your inputs were sent to Google\'s servers)'}}
+  catch(e){throw e&&e.name==='AbortError'?{code:'the hosted model took too long'}:e}finally{clearTimeout(t)}},
+ async canLocal(){try{return !!(navigator.gpu&&await navigator.gpu.requestAdapter())}catch(e){return false}},
  async remote(prompt,status){const base=(this.cfg.url||'').replace(/\/+$/,''),m=this.cfg.model;if(!base||!m)throw{code:'set the endpoint URL and model in Model settings'};
   status('Asking '+m+'…');const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),60000);
   try{const r=await fetch(base+'/chat/completions',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json'},body:JSON.stringify({model:m,temperature:.7,messages:[{role:'user',content:prompt}]})});
@@ -181,9 +189,15 @@ const prompt=p=>`You plan small, safe, low-cost social activities in public outd
 Plan one activity for: category=${p.lc}; area=${p.la}; participants=${p.ln}; time available=${p.ld} minutes; budget per person=${p.lb}; group=${p.lg}; objective=${p.lo}; difficulty=${p.lf2}; interests=${p.li||'none given'}; materials on hand=${p.lm||'none'}.
 Rules: stay within the time and budget; never invent venue names, opening hours, fees or crowd levels (say "a public park in ${p.la}"); no trespassing, climbing, dangerous challenges, picking plants or disturbing wildlife.
 Write all text values in ${p.ll}. Reply with ONLY a JSON object with keys: title, desc, objective, duration, size, materials (strings); why (string: one sentence on why it fits these interests and constraints); steps (3-7 strings); prompts, variations, access, safety (arrays of strings); closing (string).`;
-async function liveGen(p){const out=$('#plan'),st=$('#aistat');const status=m=>st.textContent=m;out.innerHTML='';
- try{const r=AI.cfg.engine.startsWith('Ollama')?await AI.remote(prompt(p),status):await AI.local(prompt(p),status);
+async function liveGen(p){const out=$('#plan'),st=$('#aistat'),btn=$('#lf button[value=live]');if(btn.disabled)return;const status=m=>st.textContent=m;out.innerHTML='';btn.disabled=true;btn.textContent='Working…';
+ try{const eng=AI.cfg.engine;let r;
+  if(eng==='Ollama / OpenAI-compatible endpoint')r=await AI.remote(prompt(p),status);
+  else if(eng==='Hosted Gemma (Google AI Studio)')r=await AI.hosted(p,status);
+  else if(eng==='On-device Gemma (WebLLM)')r=await AI.local(prompt(p),status);
+  else if(await AI.canLocal()){try{r=await AI.local(prompt(p),status)}catch(e){console.warn(e);if(!HOSTED_URL)throw e;r=await AI.hosted(p,status)}}
+  else r=await AI.hosted(p,status);
   const v=validPlan(parseJSON(r.text));if(!v)throw{code:'the model returned an incomplete plan'};idea={...v,live:r.label};status('');out.innerHTML=showPlan(idea)}
- catch(e){console.error(e);status('');idea=makePlan(p);out.innerHTML=`<div class="err">Live generation failed: ${esc(e&&(e.code||e.message)||'error')}. Showing the template instead.</div>`+showPlan(idea)}}
+ catch(e){console.error(e);status('');idea=makePlan(p);out.innerHTML=`<div class="err">Live generation failed: ${esc(e&&(e.code||e.message)||'error')}. Showing the template instead.</div>`+showPlan(idea)}
+ finally{const b=$('#lf button[value=live]');if(b){b.disabled=false;b.textContent='Generate with Gemma'}}}
 render();
 </script></body></html>
