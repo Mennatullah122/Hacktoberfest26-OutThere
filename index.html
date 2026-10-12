@@ -179,8 +179,8 @@ const AI={engine:null,modelId:null,cfg:load('ot_ai2',{engine:'Auto (on-device, e
   status('Gemma is writing your plan on this device…');
   const r=await this.engine.chat.completions.create({messages:[{role:'user',content:prompt}],temperature:.7,max_tokens:900,response_format:{type:'json_object'}});
   return{text:r.choices[0].message.content,label:this.modelId+' running on your device (WebLLM)'}},
- async hosted(p,status){if(!HOSTED_URL)throw{code:'hosted Gemma is not configured on this site'};status('Sending your request to Gemma 4 on Google AI Studio…');
-  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),60000);
+ async hosted(p,status){if(!HOSTED_URL)throw{code:'hosted Gemma is not configured on this site'};status('Gemma 4 on Google AI Studio is writing your plan. This can take up to a minute on the free tier…');
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),125000);
   try{const r=await fetch(HOSTED_URL,{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json'},body:JSON.stringify(p)});const d=await r.json().catch(()=>({}));
    if(!r.ok)throw{code:d.error||('server returned '+r.status)};return{text:d.text,label:(d.model||'Gemma')+' via Google AI Studio (your inputs were sent to Google\'s servers)'}}
   catch(e){throw e&&e.name==='AbortError'?{code:'the hosted model took too long'}:e}finally{clearTimeout(t)}},
@@ -194,7 +194,7 @@ const parseJSON=t=>{t=String(t||'');const f=t.match(/```(?:json)?\s*([\s\S]*?)``
 const prompt=p=>`You plan small, safe, low-cost social activities in public outdoor spaces in Cairo, Egypt. Get people off their screens: phones should stay in pockets.
 Plan one activity for: category=${p.lc}; area=${p.la}; participants=${p.ln}; time available=${p.ld} minutes; budget per person=${p.lb}; group=${p.lg}; objective=${p.lo}; difficulty=${p.lf2}; interests=${p.li||'none given'}; materials on hand=${p.lm||'none'}.
 Rules: stay within the time and budget; never invent venue names, opening hours, fees or crowd levels (say "a public park in ${p.la}"); no trespassing, climbing, dangerous challenges, picking plants or disturbing wildlife.
-Write all text values in ${p.ll}. Reply with ONLY a JSON object with keys: title, desc, objective, duration, size, materials (strings); why (string: one sentence on why it fits these interests and constraints); steps (3-7 strings); prompts, variations, access, safety (arrays of strings); closing (string).`;
+Write all text values in ${p.ll}. Keep it short: every text value is one sentence, at most 5 steps and at most 3 items in every other list. Reply with ONLY a JSON object, no explanation with keys: title, desc, objective, duration, size, materials (strings); why (string: one sentence on why it fits these interests and constraints); steps (3-7 strings); prompts, variations, access, safety (arrays of strings); closing (string).`;
 async function liveGen(p){const out=$('#plan'),st=$('#aistat'),btn=$('#lf button[value=live]');if(btn.disabled)return;const status=m=>st.textContent=m;out.innerHTML='';btn.disabled=true;btn.textContent='Working…';
  try{const eng=AI.cfg.engine;let r;
   if(eng==='Ollama / OpenAI-compatible endpoint')r=await AI.remote(prompt(p),status);
